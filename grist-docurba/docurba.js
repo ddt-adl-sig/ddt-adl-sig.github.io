@@ -52,6 +52,7 @@ async function majTable(){
 	}
 	divurba.innerHTML += "<br>3. je mets à jour la table DOCURBA...<br>";
 	let nbErreurs = 0; // Compter les erreurs : si 10 erreurs, arrêter le traitement
+	let today = new Date();  let jour = today.toISOString().substring(0,10);
 	let chInsee = colMappings.insee; // Nom du champ de la table
 	for( let record of allRecords ){
 		let insee = record[chInsee];
@@ -63,6 +64,7 @@ async function majTable(){
 		}
 		let update = urba[insee];
 		try {
+			update['com_nom_departement'] = jour; // Date de la mise à jour
 			await grist.docApi.applyUserActions([["UpdateRecord",tableId,record.id,update]]);
 			li.innerText = "-- "+insee+" : OK : "+ update['plan_libelle_code_etat_simplifie'];
 			divurba.innerHTML += ".";
