@@ -51,24 +51,28 @@ async function majTable(){
 		return;
 	}
 	divurba.innerHTML += "<br>3. je mets à jour la table DOCURBA...<br>";
+	let nbErreurs = 0; // Compter les erreurs : si 10 erreurs, arrêter le traitement
 	let chInsee = colMappings.insee; // Nom du champ de la table
 	for( let record of allRecords ){
 		let insee = record[chInsee];
 		let li = document.createElement("p");
-		if( urba[insee]==undefined ){
+		if( urba[insee]==undefined ){  nbErreurs += 1;
 			li.innerText = "! "+insee+" pas trouvé sur Docurba";
-			continue;
+			divjson.appendChild(li);
+			if( nbErreurs<10 ){ continue } else { break }
 		}
 		let update = urba[insee];
 		try {
 			await grist.docApi.applyUserActions([["UpdateRecord",tableId,record.id,update]]);
 			li.innerText = "-- "+insee+" : OK : "+ update['plan_libelle_code_etat_simplifie'];
 			divurba.innerHTML += ".";
-		} catch(error){
+		} catch(error){  nbErreurs += 1;
 			li.innerHTML = "! "+insee+" : ECHEC de la mise à jour de la ligne ! "+ error.message;
 			console.error('UpdateRecord Error :', error);
 		}
 		divjson.appendChild(li);
+		if( nbErreurs==10 ) break;
+
 	}
 	divurba.innerHTML += "<br>============ FIN ============ <br>";
 }
