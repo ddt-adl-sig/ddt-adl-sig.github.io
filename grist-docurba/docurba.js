@@ -27,7 +27,7 @@ grist.onRecords( async (records, mappings) => { /* A FINIR ! */
 		tableId = await cetteTable._platform.getTableId();
 	}
 	
-	//const monTimeout = setTimeout(trouverDep, 5000);
+	const monTimeout = setTimeout(trouverDep, 5000); // Il faut attendre que la page soit chargée
 });
 
 
