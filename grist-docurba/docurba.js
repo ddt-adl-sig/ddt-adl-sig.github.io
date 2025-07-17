@@ -62,8 +62,8 @@ async function majTable(){
 			divavct.innerHTML += " : <b>Problème réseau vers l'API Docurba :</b><br>"+erreurs;
 			continue
 		}
-		let urba = csvToJSON(texte); //let urba = await fetchCSV(urlAPI + insee);
-		if( urba && urba.length==1 ) urba = urba[0]; // urba: {annee_cog:"2024", code_insee:"31001",...}
+		let urba = csvToArray(texte);
+		if( urba && urba.length==1 ) urba = urba[0]; // urba = {annee_cog:"2024", code_insee:"31001",...}
 		else {
 			divavct.innerHTML += " : <b>Problème avec les données de l'API Docurba !</b><br>"+texte;
 			return;
@@ -149,7 +149,9 @@ async function fetchCSV(url){
 }
 
 
-/* Convertir un csv (texte) en objet JS : { {col1:"val",col2:"val"...},{col1:...} } */
+/* Convertir un csv (texte) en objet JS : { valRef:{col1:"val",col2:"val"...},valRef:{col1:...} }
+		où valRef est la valeur du champRef pour chaque ligne
+*/
 function csvToObjet( strData, strDelimiter, champRef ){
 	strDelimiter = (strDelimiter || ","); // If the delimiter is defined else default to comma
 	// Create a regular expression to parse the CSV values.
@@ -189,7 +191,7 @@ function csvToObjet( strData, strDelimiter, champRef ){
 			strMatchedValue = arrMatches[3];
 		}
 		//console.log(numli, numcol, strMatchedValue);
-		// Si c'est la 1ere ligne, enregistrer comme noms de colonnes dans nomcols :
+		/* Si c'est la 1ere ligne, enregistrer comme noms de colonnes dans nomcols : */
 		if( numli==0 ){
 			nomcols.push(strMatchedValue);
 			if( strMatchedValue==champRef ) colRef = true;//Marquer que la col champRef a été trouvée
@@ -204,3 +206,51 @@ function csvToObjet( strData, strDelimiter, champRef ){
 	else  objFinal[ numli ] = dataLigne; // Si champRef n'a pas été trouvé dans les cols du cv
 	return objFinal;
 }
+
+
+/* Converti un csv (texte) en Array d'objets : [ {col1:"val",col2:"val"...},{col1:...} ] */
+function csvToArray( strData, strDelimiter ){
+	strDelimiter = (strDelimiter || ","); // If the delimiter is defined else default to comma
+	// Create a regular expression to parse the CSV values.
+	var objPattern = new RegExp(
+		( // Delimiters:
+			"(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
+			// Quoted fields:
+			"(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
+			// Standard fields:
+			"([^\"\\" + strDelimiter + "\\r\\n]*))"
+		), "gi" );
+	// Create an array to hold our data. Give the array a default empty first row:
+	var arrData = [[]];
+	var arrMatches = null; // To hold our individual pattern matching groups
+	let jsonTab = [];
+	let numli = 0;  let numcol = 0;  let nomcols = [];  
+	// Keep looping over the regular expression matches until we can no longer find a match:
+	while( arrMatches = objPattern.exec( strData ) ){
+		var strMatchedDelimiter = arrMatches[ 1 ];// Get the delimiter that was found
+		// Check to see if the given delimiter has a length (is not the start of string) and if it matches
+		// field delimiter. If id does not, then we know that this delimiter is a row delimiter.
+		if ( strMatchedDelimiter.length && strMatchedDelimiter !== strDelimiter ){
+			// Since we have reached a new row of data, add an empty row to our data array:
+			jsonTab.push( {} );
+			numli += 1; // Changer le numéro de la ligne actuelle
+			numcol = 0;
+		}
+		let strMatchedValue;
+		// We have our delimiter so let's check to see which kind of value we captured (quoted or unquoted).
+		if( arrMatches[2] ){ // We found a quoted value. When we capture this value, unescape any double quotes
+			strMatchedValue = arrMatches[2].replace(new RegExp( "\"\"", "g" ),"\"");
+		} else { // We found a non-quoted value.
+			strMatchedValue = arrMatches[3];
+		}
+		//console.log(numli, numcol, strMatchedValue);
+		// Si c'est la 1ere ligne, enregistrer comme noms de colonnes dans nomcols :
+		if( numli==0 ) nomcols.push(strMatchedValue);
+		// Pour les lignes suivantes, enregistrer dans jsonTab (ligne actuelle) par son nomcols :
+		else  jsonTab[ numli-1 ][ nomcols[numcol] ] = strMatchedValue;
+		numcol += 1;
+	}
+	return jsonTab;
+}
+
+
