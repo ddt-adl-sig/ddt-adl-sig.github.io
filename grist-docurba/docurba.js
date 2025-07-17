@@ -26,6 +26,8 @@ grist.onRecords( async (records, mappings) => { /* A FINIR ! */
 		cetteTable = await grist.getTable();
 		tableId = await cetteTable._platform.getTableId();
 	}
+	
+	//const monTimeout = setTimeout(trouverDep, 5000);
 });
 
 
@@ -262,7 +264,7 @@ function csvToArray( strData, strDelimiter ){
 
 function trouverDep(){ /* Pour majTable_dep() : trouver le numéro du département dans DOCURBA */
 	inputNumDep = document.getElementById("numdep");
-	if( inputNumDep==undefined ) return;
+	if( inputNumDep==undefined ){ divurba.innerHTML = "L'input numdep n'a pas été trouvé."; return }
 	let divurba = document.getElementById('docurba');
 	if( !allRecords ){ divurba.innerHTML = "Aucune ligne trouvée dans DOCURBA !"; return }
 	let record = allRecords[0]
@@ -270,6 +272,7 @@ function trouverDep(){ /* Pour majTable_dep() : trouver le numéro du départeme
 	let insee = record[chInsee];
 	numDep = insee.substring(0,2)
 	inputNumDep.value = numDep
+	divurba.innerHTML = "Département identifié : "+ numDep;
 }
 
 

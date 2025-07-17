@@ -27,6 +27,17 @@ Indiquer le numéro du département : <input type="text" id="numdep" maxlength="
 
 <script> /* Exec à la fin du chargement de la page */
 window.onload = trouverDep;
+/*let divurba = document.getElementById('docurba');
+inputNumDep = document.getElementById("numdep");
+if( inputNumDep==undefined ) divurba.innerHTML = "Pas de numdep";
+else {
+	if( !allRecords ){ divurba.innerHTML = "Aucune ligne trouvée dans DOCURBA !"; return }
+	let record = allRecords[0]
+	let chInsee = colMappings.insee; // Nom du champ de la table
+	let insee = record[chInsee];
+	numDep = insee.substring(0,2)
+	inputNumDep.value = numDep
+}*/
 </script>
 
 </body>
