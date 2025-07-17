@@ -26,7 +26,11 @@ Indiquer le numéro du département : <input type="text" id="numdep" maxlength="
 <script src="docurba.js"></script>
 
 <script> /* Exec à la fin du chargement de la page */
-window.onload = trouverDep;
+window.onload = function () {
+	let today = new Date();  let jour = today.toISOString();
+	console.log("##### window.onload : " + jour);
+	trouverDep();
+};;
 /*let divurba = document.getElementById('docurba');
 inputNumDep = document.getElementById("numdep");
 if( inputNumDep==undefined ) divurba.innerHTML = "Pas de numdep";

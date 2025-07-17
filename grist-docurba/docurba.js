@@ -27,6 +27,8 @@ grist.onRecords( async (records, mappings) => { /* A FINIR ! */
 		tableId = await cetteTable._platform.getTableId();
 	}
 	
+	let today = new Date();  let jour = today.toISOString();
+	console.log("##### grist.onRecords : " + jour);
 	const monTimeout = setTimeout(trouverDep, 5000); // Il faut attendre que la page soit chargée
 });
 
