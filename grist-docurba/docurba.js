@@ -272,7 +272,5 @@ function trouverDep(){ /* Pour majTable_dep() : trouver le numéro du départeme
 	inputNumDep.value = numDep
 }
 
-/* Exec à la fin du chargement de la page */
-window.onload = trouverDep;
 
 
