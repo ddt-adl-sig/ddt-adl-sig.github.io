@@ -38,7 +38,6 @@ grist.onRecords( async (records, mappings) => { /* A FINIR ! */
 /* MAJ les données en interrogeant l'API Docurba (pour chaque ligne de la table) */
 async function majTable(){
 	if( traitement ) return; // MAJ déjà lancée précédemment
-	traitement = true;
 	let divurba = document.getElementById('docurba');
 	let divavct = document.getElementById('avancement');
 	if( !allRecords ){ divurba.innerHTML = "Aucune ligne trouvée dans DOCURBA !"; return }
@@ -46,6 +45,7 @@ async function majTable(){
 	else { divurba.innerHTML = "La table des données source est absente !"; return }
 	if( colMappings && colMappings.insee ) divavct.innerHTML = "<br>Colonne code Insee : "+colMappings.insee;
 	else { divurba.innerHTML = "La colonne code Insee est absente !"; return }
+	traitement = true;
 	erreurs = '';
 	//divurba.innerHTML = "allRecords :<br>"+ JSON.stringify(allRecords,null,2);
 	//divurba.innerHTML += "<br><br>colMappings : "+ JSON.stringify(colMappings,null,2);
@@ -70,7 +70,7 @@ async function majTable(){
 		if( urba && urba.length==1 ) urba = urba[0]; // urba = {annee_cog:"2024", code_insee:"31001",...}
 		else {
 			divavct.innerHTML += " : <b>Problème avec les données de l'API Docurba !</b><br>"+texte;
-			return;
+			traitement = false;  return;
 		}
 		try {
 			urba['com_nom_departement'] = jour; // Date de la mise à jour
@@ -82,6 +82,7 @@ async function majTable(){
 		}
 	}
 	divurba.innerHTML = "============ FIN ============ <br>";
+	traitement = false;
 }
 
 
@@ -93,6 +94,7 @@ function arreter(){ /* Pour stopper la MAJ en cours */
 
 /* Mettre à jour la table source en interrogeant l'API Docurba une seule fois (tout le 31) */
 async function majTable_dep(){
+	if( traitement ) return; // MAJ déjà lancée précédemment
 	let divurba = document.getElementById('docurba');
 	let divavct = document.getElementById('avancement');
 	if( !allRecords ){ divurba.innerHTML = "Aucune ligne trouvée dans DOCURBA !"; return }
@@ -103,25 +105,37 @@ async function majTable_dep(){
 	erreurs = '';
 	numDep = inputNumDep.value
 	if( numDep.length<2 ){ divurba.innerHTML = "Le n° de département n'est pas valide"; return }
+	
+	traitement = true;
 	divurba.innerHTML = "1. j'interroge DOCURBA...<br>";
+	
 	let texte = await fetchCSV(urlAPI +'?departementCode=' +numDep );
 	if( !texte ){
 		divurba.innerHTML = "<br><b>Problème réseau vers l'API Docurba :</b><br>"+erreurs;
-		return 
+		traitement = false;  return
 	}
+	if( !traitement ){
+		divurba.innerHTML = " --------- Vous avez interrompu la mise à jour --------- <br>";
+		return;
+	}
+	
 	divurba.innerHTML += "<br>2. je prépare les données reçues<br>";
 	divavct.innerHTML = "";
 	let urba = csvToObjet( texte, ',', 'code_insee' )
 	if( !urba ){
 		divurba.innerHTML = "<br><b>Problème avec les données de l'API Docurba !</b> voir ci-dessous<br>";
 		divavct.innerHTML = texte;
-		return;
+		traitement = false;  return;
 	}
 	divurba.innerHTML += "<br>3. je mets à jour la table DOCURBA...<br>";
 	let nbErreurs = 0; // Compter les erreurs : si 10 erreurs, arrêter le traitement
 	let today = new Date();  let jour = today.toISOString().substring(0,10);
 	let chInsee = colMappings.insee; // Nom du champ de la table
 	for( let record of allRecords ){
+		if( !traitement ){
+			divurba.innerHTML = " --------- Vous avez interrompu la mise à jour --------- <br>";
+			return;
+		}
 		let insee = record[chInsee];
 		let li = document.createElement("p");
 		if( urba[insee]==undefined ){  nbErreurs += 1;
@@ -144,6 +158,7 @@ async function majTable_dep(){
 
 	}
 	divurba.innerHTML += "<br>============ FIN ============ <br>";
+	traitement = false;
 }
 
 
