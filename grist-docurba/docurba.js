@@ -3,6 +3,7 @@ let tableId = null; // id de la table source (voir les options de la vue)
 let selectedRowId = null; let selectedRecord = null;
 let allRecords = null;
 let colMappings = null; //let selectedMaps = null;
+let traitement = false; // indique si la mise à jour est en cours d'exec
 let erreurs = ''; // Pour faire remonter les erreurs
 
 grist.ready({ requiredAccess:'full',
@@ -26,14 +27,68 @@ grist.onRecords( async (records, mappings) => { /* A FINIR ! */
 });
 
 
-/* Mettre à jour la table source en interrogeant l'API Docurba une seule fois (tout le 31) */
+function arreter(){ /* Pour stopper la MAJ en cours */
+	traitement = false;
+}
+
+
+/* MAJ les données en interrogeant l'API Docurba (pour chaque ligne de la table) */
 async function majTable(){
+	if( traitement ) return; // MAJ déjà lancée précédemment
+	traitement = true;
 	let divurba = document.getElementById('docurba');
-	let divjson = document.getElementById('divjson');
+	let divavct = document.getElementById('avancement');
 	if( !allRecords ){ divurba.innerHTML = "Aucune ligne trouvée dans DOCURBA !"; return }
-	if( tableId ) divjson.innerHTML = "Table source : "+tableId;
+	if( tableId ) divavct.innerHTML = "Table source : "+tableId;
 	else { divurba.innerHTML = "La table des données source est absente !"; return }
-	if( colMappings && colMappings.insee ) divjson.innerHTML = "<br>Colonne code Insee : "+colMappings.insee;
+	if( colMappings && colMappings.insee ) divavct.innerHTML = "<br>Colonne code Insee : "+colMappings.insee;
+	else { divurba.innerHTML = "La colonne code Insee est absente !"; return }
+	erreurs = '';
+	//divurba.innerHTML = "allRecords :<br>"+ JSON.stringify(allRecords,null,2);
+	//divurba.innerHTML += "<br><br>colMappings : "+ JSON.stringify(colMappings,null,2);
+	//divavct.innerHTML = "selectedMaps :<br>"+ JSON.stringify(selectedMaps,null,2);
+	divurba.innerHTML = "<br>j'interroge DOCURBA...<br>";
+	divavct.innerHTML = "";
+	let chInsee = colMappings.insee; // Nom du champ de la table
+	for( let record of allRecords ){
+		if( !traitement ){
+			divurba.innerHTML = "<br> ------ Vous avez interrompu la mise à jour ------ <br>";
+			return;
+		}
+		let insee = record[chInsee];
+		divavct.innerHTML += "<br>"+insee+" : j'interroge DOCURBA...";
+		let texte = await fetchCSV(urlAPI +'?code='+ insee);
+		if( !texte ){
+			divavct.innerHTML += " : <b>Problème réseau vers l'API Docurba :</b><br>"+erreurs;
+			continue
+		}
+		let urba = csvToJSON(texte); //let urba = await fetchCSV(urlAPI + insee);
+		if( urba && urba.length==1 ) urba = urba[0]; // urba: {annee_cog:"2024", code_insee:"31001",...}
+		else {
+			divavct.innerHTML += " : <b>Problème avec les données de l'API Docurba !</b><br>"+texte;
+			return;
+		}
+		try {
+			await grist.docApi.applyUserActions([["UpdateRecord",tableId,record.id,urba]]);
+			divavct.innerHTML += ": OK : "+ urba['plan_libelle_code_etat_simplifie'];
+		} catch(error){
+			divavct.innerHTML += " : ECHEC de la mise à jour de la ligne ! "+ error.message;
+			console.error('Error fetching CSV:', error);
+		}
+	}
+	divurba.innerHTML = "============ FIN ============ <br>";
+}
+
+
+
+/* Mettre à jour la table source en interrogeant l'API Docurba une seule fois (tout le 31) */
+async function majTable_dep(){
+	let divurba = document.getElementById('docurba');
+	let divavct = document.getElementById('avancement');
+	if( !allRecords ){ divurba.innerHTML = "Aucune ligne trouvée dans DOCURBA !"; return }
+	if( tableId ) divavct.innerHTML = "Table source : "+tableId;
+	else { divurba.innerHTML = "La table des données source est absente !"; return }
+	if( colMappings && colMappings.insee ) divavct.innerHTML = "<br>Colonne code Insee : "+colMappings.insee;
 	else { divurba.innerHTML = "La colonne code Insee est absente !"; return }
 	erreurs = '';
 	divurba.innerHTML = "1. j'interroge DOCURBA...<br>";
@@ -43,11 +98,11 @@ async function majTable(){
 		return 
 	}
 	divurba.innerHTML += "<br>2. je prépare les données reçues<br>";
-	divjson.innerHTML = "";
+	divavct.innerHTML = "";
 	let urba = csvToObjet( texte, ',', 'code_insee' )
 	if( !urba ){
 		divurba.innerHTML = "<br><b>Problème avec les données de l'API Docurba !</b> voir ci-dessous<br>";
-		divjson.innerHTML = texte;
+		divavct.innerHTML = texte;
 		return;
 	}
 	divurba.innerHTML += "<br>3. je mets à jour la table DOCURBA...<br>";
@@ -59,7 +114,7 @@ async function majTable(){
 		let li = document.createElement("p");
 		if( urba[insee]==undefined ){  nbErreurs += 1;
 			li.innerText = "! "+insee+" pas trouvé sur Docurba";
-			divjson.appendChild(li);
+			divavct.appendChild(li);
 			if( nbErreurs<10 ){ continue } else { break }
 		}
 		let update = urba[insee];
@@ -72,7 +127,7 @@ async function majTable(){
 			li.innerHTML = "! "+insee+" : ECHEC de la mise à jour de la ligne ! "+ error.message;
 			console.error('UpdateRecord Error :', error);
 		}
-		divjson.appendChild(li);
+		divavct.appendChild(li);
 		if( nbErreurs==10 ) break;
 
 	}

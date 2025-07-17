@@ -7,13 +7,18 @@
 <body style="font-family:sans-serif; padding:1em;">
 
 <h2>Mettre à jour la table DOCURBA avec des données du site docurba.beta.gouv.fr</h2>
+
 <b>Dans les options de la vue > "Choisir les données source", il faut choisir la table : DOCURBA</b>
-<br>
+
+<br><br>
 <button type="button" class="btn btn-primary" onclick="majTable()">Mettre à jour la table DOCURBA</button>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<button type="button" class="btn btn-outline-secondary" onclick="arreter()">Stopper la mise à jour</button>
+
 <br><br>
 <div id="docurba"></div>
 
-<div id="divjson" style="margin:5px 0"></div>
+<div id="avancement" style="margin:5px 0"></div>
 
 <script src="docurba.js"></script>
 
