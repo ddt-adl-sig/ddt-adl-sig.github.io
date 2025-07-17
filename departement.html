@@ -1,0 +1,46 @@
+<html>
+<head>
+  <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+  <style> p { margin:0 } </style>
+</head>
+<body style="font:90% sans-serif; padding:1em;">
+
+<h2>Mettre à jour la table DOCURBA<br>avec des données de docurba.beta.gouv.fr</h2>
+
+<b>Dans les options de la vue > "Choisir les données source", il faut choisir la table : DOCURBA</b>
+
+<br><br>
+Indiquer le numéro du département : <input type="text" id="numdep" maxlength="2" value="" style="width:2em">
+<br><br>
+<button type="button" class="btn btn-primary" onclick="majTable_dep()">Mettre à jour la table DOCURBA</button>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<button type="button" class="btn btn-outline-secondary" onclick="arreter()">Stopper la mise à jour</button>
+
+<br><br>
+<div id="docurba"></div>
+
+<div id="avancement" style="margin:5px 0"></div>
+
+
+<script src="docurba.js"></script>
+
+<script> /* Exec à la fin du chargement de la page */
+//window.onload = trouverDep;
+
+let divurba = document.getElementById('docurba');
+inputNumDep = document.getElementById("numdep");
+if( inputNumDep==undefined ) divurba.innerHTML = "Pas de numdep";
+else {
+	if( !allRecords ){ divurba.innerHTML = "Aucune ligne trouvée dans DOCURBA !"; return }
+	let record = allRecords[0]
+	let chInsee = colMappings.insee; // Nom du champ de la table
+	let insee = record[chInsee];
+	numDep = insee.substring(0,2)
+	inputNumDep.value = numDep
+}
+
+</script>
+
+</body>
+</html>
