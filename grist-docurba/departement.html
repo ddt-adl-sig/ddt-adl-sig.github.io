@@ -25,23 +25,15 @@ Indiquer le numéro du département : <input type="text" id="numdep" maxlength="
 
 <script src="docurba.js"></script>
 
-<script> /* Exec à la fin du chargement de la page */
-window.onload = function () {
+<script> /* Remarque importante : la page fini de se charger AVANT la table Grist 
+		donc AVANT l'éxécution du grist.onRecords()
+	Dans une fonction window.onload on N'a PAS accès aux données de la table (pas encore chargées).
+*/
+
+window.onload = function(){ /* Exec à la fin du chargement de la page */
 	let today = new Date();  let jour = today.toISOString();
 	console.log("##### window.onload : " + jour);
-	trouverDep();
-};;
-/*let divurba = document.getElementById('docurba');
-inputNumDep = document.getElementById("numdep");
-if( inputNumDep==undefined ) divurba.innerHTML = "Pas de numdep";
-else {
-	if( !allRecords ){ divurba.innerHTML = "Aucune ligne trouvée dans DOCURBA !"; return }
-	let record = allRecords[0]
-	let chInsee = colMappings.insee; // Nom du champ de la table
-	let insee = record[chInsee];
-	numDep = insee.substring(0,2)
-	inputNumDep.value = numDep
-}*/
+};
 </script>
 
 </body>

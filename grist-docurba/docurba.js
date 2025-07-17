@@ -29,7 +29,9 @@ grist.onRecords( async (records, mappings) => { /* A FINIR ! */
 	
 	let today = new Date();  let jour = today.toISOString();
 	console.log("##### grist.onRecords : " + jour);
-	const monTimeout = setTimeout(trouverDep, 5000); // Il faut attendre que la page soit chargée
+	// En théorie la page est chargée avant le onRecords mais par sécurité, on applique un petit délai :
+	const monTimeout = setTimeout(trouverDep, 1000);
+	// trouverDep va chercher le n° dép dans la table et l'écrire dans l'imput numdep s'il existe (il est dans departement.html mais pas dans index.html)
 });
 
 
@@ -266,7 +268,7 @@ function csvToArray( strData, strDelimiter ){
 
 function trouverDep(){ /* Pour majTable_dep() : trouver le numéro du département dans DOCURBA */
 	inputNumDep = document.getElementById("numdep");
-	if( inputNumDep==undefined ){ divurba.innerHTML = "L'input numdep n'a pas été trouvé."; return }
+	if( inputNumDep==undefined ){ console.log("### L'input numdep n'a pas été trouvé"); return }
 	let divurba = document.getElementById('docurba');
 	if( !allRecords ){ divurba.innerHTML = "Aucune ligne trouvée dans DOCURBA !"; return }
 	let record = allRecords[0]
