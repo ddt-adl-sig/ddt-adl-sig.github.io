@@ -109,7 +109,7 @@ async function majTable_dep(){
 	traitement = true;
 	divurba.innerHTML = "1. j'interroge DOCURBA...<br>";
 	
-	let texte = await fetchCSV(urlAPI +'?departementCode=' +numDep );
+	let texte = await fetchCSV(urlAPI +'?departement=' +numDep );
 	if( !texte ){
 		divurba.innerHTML = "<br><b>Problème réseau vers l'API Docurba :</b><br>"+erreurs;
 		traitement = false;  return
