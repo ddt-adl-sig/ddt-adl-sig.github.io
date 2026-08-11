@@ -1,4 +1,4 @@
-let urlAPI = 'https://nuxt3.docurba.incubateur.net/api/urba/exports/communes'; //?code=31001 | ?departementCode=31
+let urlAPI = 'https://docurba.beta.gouv.fr/api/communes'; //?code=31001 | ?departementCode=31
 let tableId = null; // id de la table source (voir les options de la vue)
 let selectedRowId = null; let selectedRecord = null;
 let allRecords = null;
