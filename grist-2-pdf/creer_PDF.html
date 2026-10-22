@@ -24,7 +24,7 @@ grist.ready({ requiredAccess:'full',
 DOCU = document.getElementById("document");
 JOURNAL = document.getElementById("journal");
 
-grist.onRecord( async (records, mappings) => {
+grist.onRecord( async (record, mappings) => {
 	if( mappings && mappings.document ){
 		chDocument = mappings.document;
 		DOCU.innerHTML = record[chDocument];
