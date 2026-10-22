@@ -26,8 +26,8 @@ JOURNAL = document.getElementById("journal");
 
 grist.onRecord( async (records, mappings) => {
 	if( mappings && mappings.document ){
-		Document = mappings.document;
-		DOCU.innerHTML = Document;
+		chDocument = mappings.document;
+		DOCU.innerHTML = record[chDocument];
 	}
 	else { JOURNAL.innerHTML = "La colonne avec le document est absente !"; return }
 });
