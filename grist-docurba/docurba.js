@@ -29,9 +29,9 @@ grist.onRecords( async (records, mappings) => { /* A FINIR ! */
 	
 	let today = new Date();  let jour = today.toISOString();
 	console.log("##### grist.onRecords : " + jour);
+	// trouverDep va chercher le n° dép dans la table et l'écrire dans l'input numdep s'il existe (il est dans departement.html mais pas dans index.html)
 	// En théorie la page est chargée avant le onRecords mais par sécurité, on applique un petit délai :
 	const monTimeout = setTimeout(trouverDep, 1000);
-	// trouverDep va chercher le n° dép dans la table et l'écrire dans l'imput numdep s'il existe (il est dans departement.html mais pas dans index.html)
 });
 
 
@@ -163,9 +163,10 @@ async function majTable_dep(){
 
 
 /* Récup les données depuis une API CSV (texte) */
-async function fetchCSV(url){
-	try {
-		const response = await fetch(url);
+async function fetchCSV(url){ /** ça ne marche plus : pb de CORS ! ! ! */
+	try { // { mode:'cors', headers:{"X-Requested-With":"XMLHttpRequest", 'Access-Control-Allow-Origin':'*'} }
+		const response = await fetch( url,
+			{ headers:{"X-Requested-With":"XMLHttpRequest"} } );
 		const data = await response.text();
 		return data;
 	} catch(error){
@@ -293,6 +294,4 @@ function trouverDep(){ /* Pour majTable_dep() : trouver le numéro du départeme
 	inputNumDep.value = numDep
 	divurba.innerHTML = "Département identifié : "+ numDep;
 }
-
-
 
