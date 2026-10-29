@@ -1,9 +1,15 @@
 
-# Convertir le contenu d'une colonne en PDF
+# Convertir le contenu d'une colonne Grist en PDF
 
-### Installation du widget
+### Installation du widget Grist
 
--- 1. Choisir la colonne avec le contenu du document (au format HTML),  
+**1. Ajouter une vue**,  
+**2. choisir une vue "Personnalisée"**,  
+**3. puis choisir le widget : "Ajouter votre propre widget"**  
+&nbsp;&nbsp;**en indiquant l'URL personnalisée :**  https://ddt-adl-sig.github.io/grist-2-pdf/creer_PDF.html
+
+**Options du widget :**  
+-- 1. **Choisir la colonne avec le contenu du document (au format HTML)**,  
 -- 2. Choisir la colonne de type 'pièce jointe' pour stocker le fichier PDF créé (optionnel),  
 -- 3. Choisir la colonne avec le nom du fichier à créer (optionnel),  
 **Colonnes optionnelles pour la mise en page :**  
