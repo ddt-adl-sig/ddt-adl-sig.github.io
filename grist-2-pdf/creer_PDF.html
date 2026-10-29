@@ -1,49 +1,131 @@
 <html>
 <head>
-	<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
-	<style> #docu { margin: initial; padding: initial; border: initial; box-sizing: initial; display: block; }
+	<style>
+	 #docu { margin: initial; padding: initial; border: initial; box-sizing: initial; display: block; }
 	</style>
+	<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.14.0/html2pdf.bundle.min.js" integrity="sha512-+9GoO5OUX2MmPRHUH5dnOY+KGReMLcxywEvQxvAI0y5JxXh/lkz99dKj4xdYfODP3dMFsoZRz4CF/vHcaqa2Ag==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body style="padding:1em">
 
-<input id="button_process" type="button" value="Créer le PDF" onclick="creerPDF()"/>
-<span id="journal"></span>
+<div style="text-align:center;background:#6fa;font-weight:bold">Convertir le contenu d'une colonne (au format HTML) en PDF</div>
+Enregistrement du fichier PDF :<br>
+-- soit dans un fichier sur votre ordinateur (il vous demandera où l'enregistrer)<br>
+-- soit dans une colonne pièce jointe de la table associée à ce widget (indiquer la colonne pièce jointe dans les options de la vue)
+<p style="margin:6px">
+Mise en page par défaut : format A4, orientation portrait, marges 20mm.<br>
+Vous pouvez définir vos réglages dans des colonnes de la table et les indiquer dans les options du widget (panneau de droite).
+</p>
+<input id="enregistrerPDF" type="button" value="Enregistrer au format PDF sur votre ordinateur" onclick="creerPDF()"/>
+&nbsp;&nbsp;&nbsp;
+<input id="pjPDF" type="button" value="Générer le PDF et le stocker dans la colonne pièce jointe" onclick="creerPDF(false)"/>
 
+<div id="journal"></div>
+<hr>
 
-<div id="docu"></div>
+<div id="docu">
+
+<div id="page" style="font-family:arial;">
+
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c8/Logo_de_la_Republique_francaise.png/330px-Logo_de_la_Republique_francaise.png" width="150px"/>
+</div>
+
+<div style="text-align:right;">
+{Prenom} {nom}<br>
+ {date}<br>
+{organisme.raison}<br>
+Toulouse, le {today}
+</div>
+
+<div>
+Madame, Monsieur,<br>
+<br>
+Vous faites partie de la fabuleuse communauté des Gristeur·euses, et nous vous en remercions.<br>
+<br>
+Nous vous prions l’assurance de nos sentiments les meilleurs. 
+</div> 
+<br>
+<div align="right">L'équipe Grist.gouv</div>
+</div>
+
+</div>
 
 
 <script>
-grist.ready({ requiredAccess:'read table',
-	/* Permet au user de désigner la colonne avec le contenu du document et le nom du fichier PDF : */
-	columns: [
-	 { name:'document', title:"Document à convertir", description:"Choisir la colonne avec le contenu du document"},
-	 { name:'nomFichier', title:"Nom du fichier PDF", description:"Choisir la colonne avec le nom du fichier à créer"}
-	]
-});
-
 const DOCU = document.getElementById("docu");
 const JOURNAL = document.getElementById("journal");
 var nomFichier = 'fichier.pdf';
+var formatPage = 'A4';
+var orientationPage = 'portrait';
+var gristAccessToken = null
+var recordId = null
+var colonnePJ = ''
+var tableId = ''
 
-let config_pdf = { // html2pdf config
+var config_pdf = { // html2pdf config
 	filename: nomFichier,
 	pagebreak: { after: ".pagebreak"},
-	jsPDF: { unit:'mm', format:'A4', orientation:'portrait', compress:true },
+	jsPDF: { unit:'mm', format: formatPage, orientation: orientationPage, compress:true },
 	margin: 20,
 	image: { type:"jpeg", quality: 0.9 },
 	html2canvas: { scale: window.devicePixelRatio * 2, allowTaint: true, useCORS: true }
 };
 
+grist.ready({ requiredAccess: 'full',
+	/* Pour désigner la colonne avec le contenu du document et autres paramètres : */
+	columns: [
+	 { name:'document', title:"Document à convertir",
+		description:"Choisir la colonne avec le contenu du document en HTML", type:"Text" },
+	 { name:'pj', title:"Pièce jointe", optional:true, type:"Attachments",
+		description:"Choisir une colonne 'pièce jointe' pour stocker le fichier PDF créé" },
+	 { name:'nomFichier', title:"Nom du fichier PDF",
+		description:"Choisir la colonne avec le nom du fichier à créer", optional:true, type:"Text" },
+	 { name:'format', title:"Format de page", optional:true, type:"Text",
+		description:"La colonne qui indique le format de mise en page (A4, A3...)" },
+	 { name:'orientation', title:"Orientation de page", optional:true, type:"Text",
+		description:"La colonne qui indique l'orientation de la page : portrait ou paysage" },
+	 { name:'marge', title:"Marge de la page", optional:true, type:"Int",
+		description:"La colonne (de type Entier) qui indique la marge de la page en mm" }
+	]
+});
 
-grist.onRecord( async (record, mappings) => {
+( async () => { // Récupérer l'id de la table courante
+	let table = await grist.getTable();
+	tableId = await table._platform.getTableId();  console.log("tableId = "+ tableId );
+})();
+
+grist.onRecord( async (record, mappings) => {  // console.log( record );
+	recordId = record.id;
+	// Reinit config_pdf (important entre chaque document !) :
+	config_pdf.jsPDF = { unit:'mm', format: formatPage, orientation: orientationPage, compress:true }
+	config_pdf.margin = 20;
 	if( mappings && mappings.document ){
 		DOCU.innerHTML = record[mappings.document];
 		if( mappings.nomFichier ){
 			let nomfic = record[mappings.nomFichier];
-			if( !nomfic.endsWith('.pdf') && !nomfic.endsWith('.PDF') ) nomfic += '.pdf'
-			config_pdf.filename = nomfic
+			if( ! nomfic )  nomfic = 'Fichier.pdf';
+			else if( !nomfic.endsWith('.pdf') && !nomfic.endsWith('.PDF') ) nomfic += '.pdf';
+			config_pdf.filename = nomfic;    console.log("nomfic = "+ nomfic );
+		}
+		if( mappings.format ){
+			let format = record[mappings.format];
+			if( format!='A4' && format!='A3' && format!='letter' )  format = 'A4';
+			config_pdf.jsPDF.format = format;    console.log("format = "+ format );
+		}
+		if( mappings.orientation ){
+			let orien = record[mappings.orientation].toLowerCase();
+			if( orien=='paysage' )  orien = 'landscape';
+			else if( orien!='portrait' && orien!='landscape' )  orien = 'portrait';
+			config_pdf.jsPDF.orientation = orien;    console.log("orientation = "+ orien);
+		}
+		if( mappings.marge ){
+			let marge = record[mappings.marge];
+			if(marge && marge>-1){ config_pdf.margin = marge;   console.log("marge = "+ marge ); }
+		}
+		if( colonnePJ=='' && mappings.pj ){
+			colonnePJ = mappings.pj;
+			console.log( "colonnePJ = "+ colonnePJ )
 		}
 	} else {
 		JOURNAL.innerHTML = "Il faut choisir la colonne qui contient le document !";
@@ -52,25 +134,76 @@ grist.onRecord( async (record, mappings) => {
 });
 
 
-function creerPDF(){
+async function creerPDF( save=true ){
 	console.log("--- creerPDF()...");
-	JOURNAL.innerHTML = "--- Création du PDF en cours..."
+	JOURNAL.innerHTML = ''
+	if( ! save && colonnePJ=='' ){
+		JOURNAL.innerHTML = "<b>Pour utiliser cette option, il faut choisir la colonne pièce jointe.</b>";
+		save = true;
+	}
+	JOURNAL.innerHTML += "<br>Création du PDF en cours..."
+	
 	try {
 		let docElem = document.querySelector("#docu");
-		let pagebreakElements = docElem.querySelectorAll(config_pdf.pagebreak.after);
+		let pagebreakElements = DOCU.querySelectorAll(config_pdf.pagebreak.after);
 		for( const pagebreakElem of pagebreakElements ){ pagebreakElem.style.display = "none" }
-		html2pdf( document.querySelector("#docu"), config_pdf ).then( function(){
-			for( const pagebreakElem of pagebreakElements ){
-				pagebreakElem.style.display = "revert";
-			}
-		});
-		console.log("--- Processing done. Offering up the file for download!");
-		JOURNAL.innerHTML = "Le PDF a été créé. Vous pouvez l'enregistrer."
+		
+		if( save ){  //html2pdf(DOCU, config_pdf);
+			html2pdf().set(config_pdf).from(DOCU).save()
+			.then( () => JOURNAL.innerHTML += "<br>Le PDF a été créé. Vous pouvez l'enregistrer." )
+			return
+		}
+		
+		pdf = await html2pdf().set(config_pdf).from(DOCU).outputPdf('blob')
+		console.log(pdf);
+		var formData = new FormData();
+		formData.append('upload', pdf, config_pdf.filename);
+		let res = await upload( formData );
+		if( res ) JOURNAL.innerHTML += "<br>Le PDF a été créé et placé dans la colonne "+ colonnePJ;
+		return
 	} catch( err ){
 		console.error("--- Processing error:", err);
 		JOURNAL.innerHTML = err
 	}
 }
+
+
+/** UPLOADER le fichier dans le document Grist : */
+async function upload( formData ){
+	// Get a Grist access token if we don't already have one :
+	console.log(`Getting new Grist access token.`);
+	gristAccessToken = await grist.docApi.getAccessToken({ readOnly:false });
+	// Use the token to get a URL to the attachment :
+	let url = new URL(gristAccessToken.baseUrl +'/attachments');
+	url.searchParams.set('auth', gristAccessToken.token);
+	console.log(`Grist attachment URL:`,url);
+	// Uploader le fichier :
+	r = await fetch( url , { method: 'POST',  body: formData,
+		headers: {"X-Requested-With": "XMLHttpRequest"}
+	} )
+	if( !r.ok ){ //throw new Error('Error ' + r.status);
+		JOURNAL.innerHTML += `<b>Erreur lors du versement du fichier PDF dans le document :
+			<br>${r.status}</b>`
+		return false;
+	}
+	let ids = await r.json();
+	idPJ = ids[0]
+	// Associer le fichier uploadé à un record (créé un attachment) dans la colonne "pj" :
+	url = new URL(gristAccessToken.baseUrl +`/tables/${tableId}/records`);
+	url.searchParams.set('auth', gristAccessToken.token);
+	console.log(`Grist update URL:`,url);
+	let data = {"records": [{"id": recordId, "fields": {} } ] };
+	data.records[0].fields[colonnePJ] = ["L", idPJ];
+	let r2 = await fetch( url , { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify( data )
+	})
+	let res = await r2.text();
+	console.log(`Update result :`,res);
+	if( res=='null' )  return true; //JOURNAL.innerHTML += "<br>OK : PJ associée à la ligne "+ recordId
+	JOURNAL.innerHTML += `<b>Erreur lors du rattachement du fichier PDF à la ligne en cours :
+		<br>${res} </b>`
+	return false;
+};
 </script>
 
 </body>
